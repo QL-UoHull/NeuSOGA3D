@@ -127,31 +127,29 @@ NeuSOGA was developed and validated primarily in **Google Colab**. The easiest w
 
 ---
 
+# Running the demo
+
+
 ## Google Colab Setup
 
-Run the following commands in the first notebook cell:
+Run the following commands in the first notebook cell to install the required dependencies and fetch the Meta SAM weights:
 
 ```bash
-!pip install pandas pyarrow opencv-python matplotlib
-!pip install git+https://github.com/facebookresearch/segment-anything.git
-!wget -q https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth
+!pip install pandas pyarrow opencv-python matplotlib scipy scikit-image numba
+!pip install git+[https://github.com/facebookresearch/segment-anything.git](https://github.com/facebookresearch/segment-anything.git)
+!wget -q [https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth](https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth)
+
 ```
 
-The downloaded checkpoint:
-
-```text
-sam_vit_b_01ec64.pth
-```
-
-will be used automatically by the NeuSOGA pipeline.
+The downloaded checkpoint (`sam_vit_b_01ec64.pth`) will be detected and used automatically by the NeuSOGA pipeline.
 
 ### Recommended Colab Configuration
 
-```text
-Runtime → Change runtime type → GPU
-```
+For significantly faster neural prior extraction, enable hardware acceleration:
 
-GPU acceleration is recommended but not required.
+`Runtime → Change runtime type → GPU`
+
+GPU acceleration is highly recommended but not strictly required.
 
 ---
 
@@ -160,210 +158,106 @@ GPU acceleration is recommended but not required.
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/QL-UoHull/NeuSOGA3D.git
+git clone [https://github.com/QL-UoHull/NeuSOGA3D.git](https://github.com/QL-UoHull/NeuSOGA3D.git)
+cd NeuSOGA3D
 
-cd NeuSOGA
 ```
 
 ### 2. Create a Virtual Environment
 
-#### Linux / macOS
+**Linux / macOS**
 
 ```bash
 python -m venv .venv
-
 source .venv/bin/activate
+
 ```
 
-#### Windows
+**Windows**
 
 ```cmd
 python -m venv .venv
-
 .venv\Scripts\activate
+
 ```
 
 ### 3. Install Dependencies
 
-```bash
-pip install rembg
-pip install opencv-python matplotlib
-pip install git+https://github.com/facebookresearch/segment-anything.git
-```
-
-### 4. Download SAM Checkpoint
+Install the required packages for the math engine, rendering pipeline, and data streaming:
 
 ```bash
-wget https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth
+pip install torch pandas pyarrow opencv-python matplotlib scipy scikit-image numba
+pip install git+[https://github.com/facebookresearch/segment-anything.git](https://github.com/facebookresearch/segment-anything.git)
+
 ```
 
-or manually download from:
+### 4. Download SAM Checkpoint (Optional)
 
-https://github.com/facebookresearch/segment-anything
+The NeuSOGA Python script is designed to **automatically download** the required SAM checkpoint if it is missing from your working directory.
+
+If you prefer to download it manually, run:
+
+```bash
+wget [https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth](https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth)
+
+```
 
 ---
 
-# External Resources
+## External Resources
 
-## ModelNet40 Dataset
+### ModelNet40 Dataset
 
-NeuSOGA automatically downloads and extracts the ModelNet40 dataset when executed for the first time.
+NeuSOGA accesses the ModelNet40 dataset (`jxie/modelnet40`) using a direct Hugging Face Parquet stream via `pandas`.
 
-The dataset is not bundled with this repository and no manual download is required.
+* **No manual download is required.**
+* The data streams directly into memory, bypassing local `.zip` extraction and avoiding known Python 3.13 circular import bugs in the official `datasets` library.
 
----
-
-## Segment Anything (SAM)
+### Segment Anything (SAM)
 
 NeuSOGA employs topology-guided perception using Meta's Segment Anything Model.
 
-Required checkpoint:
-
-```text
-sam_vit_b_01ec64.pth
-```
-
-Download:
-
-```bash
-wget -q https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth
-```
+* Required checkpoint: `sam_vit_b_01ec64.pth`
+* The framework automatically handles loading the model into the correct precision environment.
 
 ---
 
 ## Hardware Requirements
 
-The framework automatically detects:
+The framework automatically detects available hardware:
 
-```text
-CPU
-CUDA GPU
-```
-
-CPU execution is fully supported.
-
-GPU acceleration is recommended for large-scale robustness experiments but is not required.
+* **CPU:** Fully supported. The explicit math engine (PSPS) is heavily accelerated via `@njit` Numba vectorization and runs efficiently on CPUs.
+* **CUDA GPU:** Automatically detected and utilized by PyTorch for the SAM inference stage. Highly recommended for large-scale robustness experiments.
 
 ---
 
-# Running NeuSOGA
+## Running NeuSOGA3D
 
-## Google Colab
+### Command Line Execution
 
-After executing the installation cell:
-
-```python
-!python neusoga3d_demo.py
-```
-
-or execute the notebook cells sequentially.
-
----
-
-## Local Execution
-
-Run:
+To run the primary pipeline and generate the 1x3 publication-ready render:
 
 ```bash
 python neusoga3d_demo.py
+
 ```
 
-The script automatically:
+### Jupyter / Colab Notebooks
 
-1. Downloads ModelNet40 (if required).
-2. Loads SAM.
-3. Processes representative objects from all 40 ModelNet40 categories.
-4. Generates arbitrary-view projections along:
+If you are exploring the framework via notebooks, we suggest the following workflow:
 
-```text
-[1, 1, 1]
+1. Open the notebook in your environment.
+2. Run the dependency installation cell (if on Colab).
+3. Execute the cells sequentially.
+
+**Available Notebooks:**
+
+* `notebooks/NeuSOGA3D_Demo.ipynb`: End-to-end demonstration of the NeuSOGA pipeline, featuring point cloud ingestion, SAM hull extraction, and PSPS mathematical lofting.
+* `notebooks/NeuSOGA_Robustness.ipynb`: Robustness evaluation across various ModelNet40 object categories and topological structures.
+
 ```
 
-5. Executes the complete:
-
-```text
-O → T → G → S
 ```
-
-abstraction hierarchy.
-
----
-
-# Outputs
-
-Results are written to:
-
-```text
-robustness_results/
-```
-
-For each object, NeuSOGA generates an eight-stage visualization illustrating:
-
-```text
-1. Observation (O)
-2. Euclidean Distance Transform
-3. Topology Nodes (T)
-4. Topology-Guided Segmentation
-5. Scale-Space Contour
-6. Control Polygon (G)
-7. Area Spline Field
-8. Symbolic Boundary F(x,y)=0 (S)
-```
-
-These visualizations provide a transparent view of how symbolic mathematical representations emerge from geometric observations.
-
----
-
-# Colab and Jupyter Notebook Workflows
-
-## Google Colab
-
-Recommended workflow:
-
-1. Open the notebook in Colab.
-2. Run the dependency installation cell shown above.
-3. Ensure the SAM checkpoint has been downloaded.
-4. Enable GPU runtime (optional but recommended).
-5. Execute all notebook cells sequentially.
-
----
-
-## Local Jupyter Notebook
-
-Launch Jupyter:
-
-```bash
-jupyter notebook
-```
-
-or
-
-```bash
-jupyter lab
-```
-
-Then:
-
-1. Open the desired NeuSOGA notebook.
-2. Install the required dependencies.
-3. Download the SAM checkpoint.
-4. Execute notebook cells in order.
-
----
-
-## Suggested Notebooks
-
-```text
-notebooks/NeuSOGA3D_Demo.ipynb
-```
-
-End-to-end demonstration of the NeuSOGA pipeline.
-
-```text
-notebooks/NeuSOGA_Robustness.ipynb
-```
-
-Robustness evaluation across object categories and viewpoints.
 
 ---
 
