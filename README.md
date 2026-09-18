@@ -5,6 +5,8 @@
 NeuSOGA3D extends the NeuSOGA framework by transforming unorganized point-cloud observations into explicit symbolic geometric representations, enabling explainable and CAD-compatible three-dimensional reconstruction.
 
 ---
+![NeuSOGA3D Demo](https://github.com/QL-UoHull/NeuSOGA3D/raw/main/Demo/Demo-github.png)
+---
 
 ## Philosophy
 
