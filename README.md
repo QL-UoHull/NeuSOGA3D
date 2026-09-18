@@ -132,8 +132,7 @@ NeuSOGA was developed and validated primarily in **Google Colab**. The easiest w
 Run the following commands in the first notebook cell:
 
 ```bash
-!pip install rembg
-!pip install opencv-python matplotlib
+!pip install pandas pyarrow opencv-python matplotlib
 !pip install git+https://github.com/facebookresearch/segment-anything.git
 !wget -q https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth
 ```
